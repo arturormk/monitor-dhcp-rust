@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux-x86_64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install the Rust target and static linker
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          sudo apt-get update
+          sudo apt-get install --yes musl-tools
+      - name: Verify the release tag
+        run: |
+          expected="$(cargo run --locked --quiet -- --version | awk '{print $2}')"
+          test "$GITHUB_REF_NAME" = "$expected" || {
+            echo "Tag $GITHUB_REF_NAME does not match binary version $expected" >&2
+            exit 1
+          }
+      - name: Build static executable
+        run: cargo build --release --locked --target x86_64-unknown-linux-musl
+      - name: Package release
+        run: |
+          package="monitor-dhcp-${GITHUB_REF_NAME}-x86_64-unknown-linux-musl"
+          mkdir -p "dist/$package"
+          cp target/x86_64-unknown-linux-musl/release/monitor-dhcp "dist/$package/"
+          cp config.example.toml README.md LICENSE "dist/$package/"
+          cp packaging/monitor-dhcp.service "dist/$package/"
+          tar -C dist -czf "dist/$package.tar.gz" "$package"
+          sha256sum "dist/$package.tar.gz" > "dist/$package.tar.gz.sha256"
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.sha256 --generate-notes --verify-tag

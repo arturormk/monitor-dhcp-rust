@@ -1,0 +1,9 @@
+[package]
+name = "dhcproto"
+version = "0.15.0"
+edition = "2024"
+license = "MIT"
+description = "Vendored minimal DHCPv4 codec API used by monitor-dhcp"
+
+[lib]
+path = "src/lib.rs"

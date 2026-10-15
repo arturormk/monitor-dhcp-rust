@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a reproducible problem with monitor-dhcp
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please remove real MAC addresses and other sensitive network data.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `monitor-dhcp --version`
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Include the expected behavior and the actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Linux distribution, architecture, interface type, and client model.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      render: shell

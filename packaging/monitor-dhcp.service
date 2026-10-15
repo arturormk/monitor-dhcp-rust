@@ -1,0 +1,44 @@
+[Unit]
+Description=Minimal DHCP server for a dedicated monitor interface
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=exec
+Environment=RUST_LOG=info
+Environment=MONITOR_DHCP_CONFIG=/etc/monitor-dhcp/config.toml
+ExecStartPre=/usr/local/bin/monitor-dhcp --config ${MONITOR_DHCP_CONFIG} --check
+ExecStart=/usr/local/bin/monitor-dhcp --config ${MONITOR_DHCP_CONFIG}
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=10
+User=monitor-dhcp
+Group=monitor-dhcp
+UMask=0077
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_NETLINK AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RemoveIPC=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
