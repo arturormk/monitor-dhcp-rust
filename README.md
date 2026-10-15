@@ -6,9 +6,10 @@ The configuration file is the source of truth. This design fits a PC directly co
 
 ## Download a release
 
-GitHub releases contain a statically linked Linux x86_64 executable, the
-example configuration, and the systemd unit. Download the archive and its
-checksum from the Releases page, then verify and install it:
+GitHub [releases](https://github.com/arturormk/monitor-dhcp-rust/releases)
+contain a statically linked Linux x86_64 executable, the example configuration,
+and the systemd unit. Download the archive and its checksum, then verify and
+install it:
 
 ```bash
 sha256sum --check monitor-dhcp-v1.0-x86_64-unknown-linux-musl.tar.gz.sha256
