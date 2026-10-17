@@ -7,29 +7,31 @@ The configuration file is the source of truth. This design fits a PC directly co
 ## Download a release
 
 GitHub [releases](https://github.com/arturormk/monitor-dhcp-rust/releases)
-contain a statically linked Linux x86_64 executable, the example configuration,
-and the systemd unit. Download the archive and its checksum, then verify and
-install it:
+contain a statically linked Linux x86_64 archive. Stable `v1.<even>` releases
+also contain installable Debian and RPM packages with checksums. On Ubuntu
+20.04 or newer, install the `.deb`, edit its deliberately commented-out
+configuration, and then start the service:
 
 ```bash
-sha256sum --check monitor-dhcp-v1.0-x86_64-unknown-linux-musl.tar.gz.sha256
-tar -xzf monitor-dhcp-v1.0-x86_64-unknown-linux-musl.tar.gz
-cd monitor-dhcp-v1.0-x86_64-unknown-linux-musl
-sudo install -Dm0755 monitor-dhcp /usr/local/bin/monitor-dhcp
-sudo install -Dm0644 config.example.toml /etc/monitor-dhcp/config.toml
+sha256sum --check monitor-dhcp_1.0_amd64.deb.sha256
+sudo apt install ./monitor-dhcp_1.0_amd64.deb
+sudoedit /etc/monitor-dhcp/config.toml
+sudo -u monitor-dhcp monitor-dhcp --check
+sudo systemctl enable --now monitor-dhcp.service
 ```
 
-Review the configuration and systemd instructions below before starting the
-server. Release binaries are built by GitHub Actions from version tags; no
-prebuilt binary is committed to this repository.
+The package creates the system account, installs the hardened unit, and leaves
+the service disabled and stopped until configuration is complete. Package
+upgrades preserve the edited TOML file. Release binaries are built by GitHub
+Actions from version tags; no prebuilt binary is committed to this repository.
 
 ## Build and install
 
-Ubuntu 24.04 and Ubuntu 26.04 are supported. Install the Rust toolchain and build:
+Ubuntu 20.04 and newer are supported. Install the Rust toolchain and build:
 
 ```bash
 cargo build --release
-sudo install -Dm0755 target/release/monitor-dhcp /usr/local/bin/monitor-dhcp
+sudo install -Dm0755 target/release/monitor-dhcp /usr/bin/monitor-dhcp
 sudo install -Dm0644 config.example.toml /etc/monitor-dhcp/config.toml
 ```
 
@@ -140,6 +142,20 @@ cargo run --release -- --version
 git tag v1.0
 git push origin v1.0
 ```
+
+For stable tags matching `v1.<even>` (for example, `v1.0` or `v1.2`), the
+workflow additionally attaches `.deb` and `.rpm` packages and their checksums.
+Build those packages locally on an x86_64 Linux host with a musl Rust target;
+`dpkg-deb` is needed for Debian output and `rpmbuild` for RPM output:
+
+```bash
+rustup target add x86_64-unknown-linux-musl
+./packaging/build-packages.sh deb   # or rpm, or all
+```
+
+Artifacts are written to `dist/`. Both packages install `/usr/bin/monitor-dhcp`,
+the systemd unit, and `/etc/monitor-dhcp/config.toml`, and neither package
+automatically starts an unconfigured service.
 
 ## Limitations
 

@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+if ! getent group monitor-dhcp >/dev/null; then
+    groupadd --system monitor-dhcp
+fi
+if ! getent passwd monitor-dhcp >/dev/null; then
+    useradd --system --gid monitor-dhcp --no-create-home \
+        --shell /usr/sbin/nologin monitor-dhcp
+fi
+
+chown root:monitor-dhcp /etc/monitor-dhcp
+chmod 0750 /etc/monitor-dhcp
+if [ -f /etc/monitor-dhcp/config.toml ]; then
+    chown root:monitor-dhcp /etc/monitor-dhcp/config.toml
+    chmod 0640 /etc/monitor-dhcp/config.toml
+fi
+
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl daemon-reload || true
+fi
+
+exit 0

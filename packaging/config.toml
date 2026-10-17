@@ -1,0 +1,15 @@
+# monitor-dhcp is intentionally not started by the package installer.
+#
+# Uncomment and adjust every required setting, then validate and enable it:
+#   sudo -u monitor-dhcp monitor-dhcp --check
+#   sudo systemctl enable --now monitor-dhcp.service
+#
+# interface = "enp3s0"
+# server_ip = "192.168.50.1"
+# subnet_mask = "255.255.255.0"
+# default_ip = "192.168.50.2"
+# lease_seconds = 86400
+#
+# [hosts]
+# "00:11:22:33:44:55" = "192.168.50.10"
+# "AA:BB:CC:DD:EE:FF" = "192.168.50.11"

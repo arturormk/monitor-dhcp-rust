@@ -31,16 +31,33 @@ jobs:
           }
       - name: Build static executable
         run: cargo build --release --locked --target x86_64-unknown-linux-musl
+      - name: Detect a stable v1 release
+        id: stable
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_NAME" =~ ^v1\.([0-9]+)$ ]] &&
+             (( 10#${BASH_REMATCH[1]} % 2 == 0 )); then
+            echo "build_packages=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build_packages=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Package release
         run: |
           package="monitor-dhcp-${GITHUB_REF_NAME}-x86_64-unknown-linux-musl"
-          mkdir -p "dist/$package"
-          cp target/x86_64-unknown-linux-musl/release/monitor-dhcp "dist/$package/"
-          cp config.example.toml README.md LICENSE "dist/$package/"
-          cp packaging/monitor-dhcp.service "dist/$package/"
-          tar -C dist -czf "dist/$package.tar.gz" "$package"
-          sha256sum "dist/$package.tar.gz" > "dist/$package.tar.gz.sha256"
+          mkdir -p "release-staging/$package" dist
+          cp target/x86_64-unknown-linux-musl/release/monitor-dhcp "release-staging/$package/"
+          cp config.example.toml README.md LICENSE "release-staging/$package/"
+          cp packaging/monitor-dhcp.service "release-staging/$package/"
+          tar -C release-staging -czf "dist/$package.tar.gz" "$package"
+          cd dist
+          sha256sum "$package.tar.gz" > "$package.tar.gz.sha256"
+      - name: Install RPM packaging tools
+        if: steps.stable.outputs.build_packages == 'true'
+        run: sudo apt-get install --yes rpm
+      - name: Build Debian and RPM packages
+        if: steps.stable.outputs.build_packages == 'true'
+        run: ./packaging/build-packages.sh all
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.sha256 --generate-notes --verify-tag
+        run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --verify-tag

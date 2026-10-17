@@ -6,7 +6,7 @@ physical Ethernet interface or a Linux bridge.
 
 The recommended arrangement is:
 
-- a root-owned executable under `/usr/local/bin`;
+- a root-owned executable under `/usr/bin`;
 - a dedicated, unprivileged `monitor-dhcp` account;
 - a root-owned configuration readable by the service group;
 - the interface and server address selected in the TOML configuration;
@@ -41,21 +41,38 @@ examples. A physical name such as `enp3s0` works identically.
 
 ## 2. Install the executable
 
+For Ubuntu 20.04 or newer, the release `.deb` performs sections 2, 3, and 5
+and installs the commented configuration described in section 4. It does not
+enable or start the service because the configuration is not usable until it
+has been edited:
+
+```bash
+sudo apt install ./monitor-dhcp_1.0_amd64.deb
+sudoedit /etc/monitor-dhcp/config.toml
+sudo -u monitor-dhcp monitor-dhcp --check
+sudo systemctl enable --now monitor-dhcp.service
+```
+
+Package upgrades preserve a locally edited `config.toml`. An RPM with the same
+behavior is also attached to stable releases for RPM-based distributions.
+
+The following manual instructions describe the same installation layout.
+
 Build the release executable, then install it as a root-owned file that cannot
 be modified by the service account:
 
 ```bash
 cargo build --release --locked
 sudo install -o root -g root -m 0755 \
-  target/release/monitor-dhcp /usr/local/bin/monitor-dhcp
+  target/release/monitor-dhcp /usr/bin/monitor-dhcp
 ```
 
 Confirm that the installed executable starts and that it is the expected
 version:
 
 ```bash
-/usr/local/bin/monitor-dhcp --version
-ls -l /usr/local/bin/monitor-dhcp
+/usr/bin/monitor-dhcp --version
+ls -l /usr/bin/monitor-dhcp
 ```
 
 Do not grant capabilities directly to the executable with `setcap`. The unit
@@ -125,7 +142,7 @@ Run the static validation as the service user. This catches syntax, address,
 lease, and reservation errors without opening UDP port 67:
 
 ```bash
-sudo -u monitor-dhcp /usr/local/bin/monitor-dhcp \
+sudo -u monitor-dhcp /usr/bin/monitor-dhcp \
   --config /etc/monitor-dhcp/display-wall.toml --check
 ```
 
@@ -299,7 +316,7 @@ After changing reservations, the default address, subnet mask, or lease time,
 run a manual check and request a reload:
 
 ```bash
-sudo -u monitor-dhcp /usr/local/bin/monitor-dhcp \
+sudo -u monitor-dhcp /usr/bin/monitor-dhcp \
   --config /etc/monitor-dhcp/display-wall.toml --check
 sudo systemctl reload monitor-dhcp.service
 journalctl -u monitor-dhcp.service -n 20 --no-pager
@@ -358,7 +375,7 @@ Common causes are:
 - **UDP port 67 is already occupied:** inspect `sudo ss -ulpn 'sport = :67'`
   and disable the competing DHCP server on this interface.
 - **The unit reports an execution error:** confirm that
-  `/usr/local/bin/monitor-dhcp` exists, is executable, and matches the host
+  `/usr/bin/monitor-dhcp` exists, is executable, and matches the host
   architecture.
 - **The unit reports a user or group error:** recreate the static service
   account and group, then retry.
@@ -376,11 +393,11 @@ and restart:
 
 ```bash
 sudo install -o root -g root -m 0755 \
-  target/release/monitor-dhcp /usr/local/bin/monitor-dhcp
+  target/release/monitor-dhcp /usr/bin/monitor-dhcp
 sudo install -o root -g root -m 0644 packaging/monitor-dhcp.service \
   /etc/systemd/system/monitor-dhcp.service
 sudo systemctl daemon-reload
-sudo -u monitor-dhcp /usr/local/bin/monitor-dhcp \
+sudo -u monitor-dhcp /usr/bin/monitor-dhcp \
   --config /etc/monitor-dhcp/display-wall.toml --check
 sudo systemctl restart monitor-dhcp.service
 ```

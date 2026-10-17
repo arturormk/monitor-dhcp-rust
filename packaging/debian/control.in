@@ -1,0 +1,12 @@
+Package: monitor-dhcp
+Version: @VERSION@
+Section: net
+Priority: optional
+Architecture: amd64
+Maintainer: monitor-dhcp contributors
+Depends: systemd (>= 245), passwd
+Installed-Size: @INSTALLED_SIZE@
+Homepage: https://github.com/arturormk/monitor-dhcp-rust
+Description: deterministic DHCPv4 server for a dedicated Ethernet interface
+ A small DHCPv4 server which gives configured addresses to known MAC
+ addresses and one deterministic default address to unknown clients.
