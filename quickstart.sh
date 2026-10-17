@@ -12,6 +12,60 @@ die() {
 command -v cargo >/dev/null 2>&1 || die "cargo is required; install Rust with rustup first"
 command -v rustc >/dev/null 2>&1 || die "rustc is required; install Rust with rustup first"
 
+install_target() {
+    local target=$1
+    if rustup target list --installed 2>/dev/null | grep -Fxq "$target"; then
+        return 0
+    fi
+    command -v rustup >/dev/null 2>&1 || return 1
+    echo "Installing Rust target $target..."
+    rustup target add "$target"
+}
+
+echo "Create:"
+echo "  1) Executable"
+echo "  2) Debian package (.deb, amd64)"
+echo "  3) RPM package (.rpm, x86_64)"
+if ! read -r -p "Selection [1, executable]: " artifact_choice; then
+    artifact_choice=""
+fi
+artifact_choice=${artifact_choice:-1}
+
+case "${artifact_choice,,}" in
+    1 | executable | binary)
+        artifact=executable
+        ;;
+    2 | deb | debian | .deb)
+        artifact=deb
+        ;;
+    3 | rpm | .rpm)
+        artifact=rpm
+        ;;
+    *)
+        die "invalid selection '$artifact_choice'; choose 1, 2, or 3"
+        ;;
+esac
+
+cd "$PROJECT_DIR" || die "cannot enter project directory $PROJECT_DIR"
+
+if [[ $artifact != executable ]]; then
+    if [[ $artifact == deb ]]; then
+        command -v dpkg-deb >/dev/null 2>&1 || \
+            die "dpkg-deb is required to create a Debian package"
+    else
+        command -v rpmbuild >/dev/null 2>&1 || \
+            die "rpmbuild is required to create an RPM package"
+    fi
+
+    package_target=x86_64-unknown-linux-musl
+    install_target "$package_target" || \
+        die "could not install Rust target $package_target"
+    "$PROJECT_DIR/packaging/build-packages.sh" "$artifact" || \
+        die "$artifact package build failed"
+    echo "Run quickstart.sh again to create another artifact type."
+    exit 0
+fi
+
 host_machine=$(uname -m)
 case "$host_machine" in
     x86_64 | amd64)
@@ -68,16 +122,6 @@ case "${choice,,}" in
         ;;
 esac
 
-install_target() {
-    local target=$1
-    if rustup target list --installed 2>/dev/null | grep -Fxq "$target"; then
-        return 0
-    fi
-    command -v rustup >/dev/null 2>&1 || return 1
-    echo "Installing Rust target $target..."
-    rustup target add "$target"
-}
-
 build_with_cargo() {
     local target=$1
     local target_linker=$2
@@ -90,8 +134,6 @@ build_with_cargo() {
         cargo build --release --target "$target"
     fi
 }
-
-cd "$PROJECT_DIR" || die "cannot enter project directory $PROJECT_DIR"
 
 echo "Attempting a static musl build for $architecture ($static_target)..."
 static_build=false

@@ -20,10 +20,12 @@ sudo -u monitor-dhcp monitor-dhcp --check
 sudo systemctl enable --now monitor-dhcp.service
 ```
 
-The package creates the system account, installs the hardened unit, and leaves
-the service disabled and stopped until configuration is complete. Package
-upgrades preserve the edited TOML file. Release binaries are built by GitHub
-Actions from version tags; no prebuilt binary is committed to this repository.
+The package creates the system account, installs hardened single-instance and
+template units, and leaves them disabled and stopped until configuration is
+complete. Package upgrades preserve the edited TOML file. Run
+`man monitor-dhcp` for packaged operating instructions, including multiple
+interfaces. Release binaries are built by GitHub Actions from version tags;
+no prebuilt binary is committed to this repository.
 
 ## Build and install
 
@@ -35,7 +37,10 @@ sudo install -Dm0755 target/release/monitor-dhcp /usr/bin/monitor-dhcp
 sudo install -Dm0644 config.example.toml /etc/monitor-dhcp/config.toml
 ```
 
-Alternatively, run `./quickstart.sh` and choose x86_64, ARMv6, or ARMv7. It prefers a statically linked musl executable, falls back to the corresponding GNU target only when the static toolchain is unavailable, and prints the resulting executable path.
+Alternatively, run `./quickstart.sh` and choose an executable, Debian package,
+or RPM package. Executable builds then offer x86_64, ARMv6, and ARMv7; they
+prefer static musl and fall back to the corresponding GNU target when needed.
+Package builds produce x86_64/amd64 artifacts under `dist/`.
 
 Edit `/etc/monitor-dhcp/config.toml`; see [config.example.toml](config.example.toml). A reserved address may equal `default_ip`, but because there is no collision avoidance only one such client may be active safely.
 
@@ -154,8 +159,9 @@ rustup target add x86_64-unknown-linux-musl
 ```
 
 Artifacts are written to `dist/`. Both packages install `/usr/bin/monitor-dhcp`,
-the systemd unit, and `/etc/monitor-dhcp/config.toml`, and neither package
-automatically starts an unconfigured service.
+the standard and template systemd units, the man page, and
+`/etc/monitor-dhcp/config.toml`. Neither package automatically starts an
+unconfigured service.
 
 ## Limitations
 

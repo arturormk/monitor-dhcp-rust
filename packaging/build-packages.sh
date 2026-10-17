@@ -37,13 +37,18 @@ build_deb() {
     trap 'rm -rf "$stage"' EXIT HUP INT TERM
     chmod 0755 "$stage"
     install -d -m 0755 "$stage/DEBIAN" "$stage/usr/bin" \
-        "$stage/lib/systemd/system" "$stage/usr/share/doc/monitor-dhcp"
+        "$stage/lib/systemd/system" "$stage/usr/share/doc/monitor-dhcp" \
+        "$stage/usr/share/man/man8"
     install -d -m 0750 "$stage/etc/monitor-dhcp"
     install -m 0755 "$binary" "$stage/usr/bin/monitor-dhcp"
     install -m 0644 packaging/monitor-dhcp.service \
-        "$stage/lib/systemd/system/monitor-dhcp.service"
+        packaging/monitor-dhcp@.service "$stage/lib/systemd/system/"
     install -m 0640 packaging/config.toml "$stage/etc/monitor-dhcp/config.toml"
-    install -m 0644 README.md LICENSE "$stage/usr/share/doc/monitor-dhcp/"
+    install -m 0644 README.md LICENSE docs/HOWTO-systemd.md \
+        "$stage/usr/share/doc/monitor-dhcp/"
+    gzip -n -9 -c packaging/monitor-dhcp.8 > \
+        "$stage/usr/share/man/man8/monitor-dhcp.8.gz"
+    chmod 0644 "$stage/usr/share/man/man8/monitor-dhcp.8.gz"
     installed_size=$(du -sk "$stage" | awk '{print $1}')
     sed -e "s/@VERSION@/$version/" \
         -e "s/@INSTALLED_SIZE@/$installed_size/" \
@@ -69,8 +74,10 @@ build_rpm() {
     mkdir -p "$topdir/BUILD" "$topdir/BUILDROOT" "$topdir/RPMS" \
         "$topdir/SOURCES" "$topdir/SPECS" "$topdir/SRPMS"
     install -m 0755 "$binary" "$topdir/SOURCES/monitor-dhcp"
-    install -m 0644 packaging/monitor-dhcp.service packaging/config.toml \
-        README.md LICENSE "$topdir/SOURCES/"
+    install -m 0644 packaging/monitor-dhcp.service \
+        packaging/monitor-dhcp@.service packaging/monitor-dhcp.8 \
+        packaging/config.toml README.md LICENSE docs/HOWTO-systemd.md \
+        "$topdir/SOURCES/"
     install -m 0644 packaging/rpm/monitor-dhcp.spec "$topdir/SPECS/"
     rpmbuild -bb --define "_topdir $topdir" \
         --define "_unitdir /usr/lib/systemd/system" \

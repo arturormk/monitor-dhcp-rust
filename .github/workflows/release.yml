@@ -47,7 +47,9 @@ jobs:
           mkdir -p "release-staging/$package" dist
           cp target/x86_64-unknown-linux-musl/release/monitor-dhcp "release-staging/$package/"
           cp config.example.toml README.md LICENSE "release-staging/$package/"
-          cp packaging/monitor-dhcp.service "release-staging/$package/"
+          cp packaging/monitor-dhcp.service packaging/monitor-dhcp@.service \
+            packaging/monitor-dhcp.8 "release-staging/$package/"
+          cp docs/HOWTO-systemd.md "release-staging/$package/"
           tar -C release-staging -czf "dist/$package.tar.gz" "$package"
           cd dist
           sha256sum "$package.tar.gz" > "$package.tar.gz.sha256"

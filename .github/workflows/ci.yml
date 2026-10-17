@@ -23,5 +23,7 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
       - run: cargo build --release --locked
-      - name: Validate package scripts
-        run: sh -n packaging/build-packages.sh packaging/debian/postinst packaging/debian/prerm packaging/debian/postrm
+      - name: Validate helper scripts
+        run: |
+          bash -n quickstart.sh
+          sh -n packaging/build-packages.sh packaging/debian/postinst packaging/debian/prerm packaging/debian/postrm

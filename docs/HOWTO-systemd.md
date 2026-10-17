@@ -149,13 +149,16 @@ sudo -u monitor-dhcp /usr/bin/monitor-dhcp \
 The success message says that the network interface was not checked. Runtime
 startup performs that check after the system network configuration is active.
 
-## 5. Install the unit
+## 5. Install the units
 
-Install the unit supplied by the project:
+Install the standard unit and the optional instance template supplied by the
+project:
 
 ```bash
 sudo install -o root -g root -m 0644 packaging/monitor-dhcp.service \
   /etc/systemd/system/monitor-dhcp.service
+sudo install -o root -g root -m 0644 packaging/monitor-dhcp@.service \
+  /etc/systemd/system/monitor-dhcp@.service
 sudo systemctl daemon-reload
 ```
 
@@ -190,7 +193,75 @@ Paths containing whitespace work with the `${MONITOR_DHCP_CONFIG}` expansion
 used by the unit, but conventional whitespace-free configuration paths are
 easier to operate and troubleshoot.
 
-## 6. Understand the unit policy
+## 6. Run multiple independent interfaces
+
+The package installs two units but enables neither automatically:
+
+- `monitor-dhcp.service` is the simple single-interface service and reads
+  `/etc/monitor-dhcp/config.toml` by default.
+- `monitor-dhcp@.service` is an instance template. An instance named
+  `monitor-a` reads `/etc/monitor-dhcp/monitor-a.toml`.
+
+Use the standard service for one interface. For two or more independent
+interfaces, use one template instance and one configuration file per
+interface. Do not also run the standard service unless it serves an additional
+interface with a different configuration.
+
+Start by creating named configurations from the package's commented template:
+
+```bash
+sudo install -o root -g monitor-dhcp -m 0640 \
+  /etc/monitor-dhcp/config.toml /etc/monitor-dhcp/monitor-a.toml
+sudo install -o root -g monitor-dhcp -m 0640 \
+  /etc/monitor-dhcp/config.toml /etc/monitor-dhcp/monitor-b.toml
+sudoedit /etc/monitor-dhcp/monitor-a.toml
+sudoedit /etc/monitor-dhcp/monitor-b.toml
+```
+
+Set a different `interface` in each file. Each interface must already own the
+corresponding `server_ip` and mask. Distinct IPv4 subnets are recommended so
+normal host routing is unambiguous. Validate both files before starting either
+instance:
+
+```bash
+sudo -u monitor-dhcp monitor-dhcp \
+  --config /etc/monitor-dhcp/monitor-a.toml --check
+sudo -u monitor-dhcp monitor-dhcp \
+  --config /etc/monitor-dhcp/monitor-b.toml --check
+```
+
+If the standard service was previously enabled, stop and disable it before
+replacing it with instances:
+
+```bash
+sudo systemctl disable --now monitor-dhcp.service
+sudo systemctl enable --now \
+  monitor-dhcp@monitor-a.service \
+  monitor-dhcp@monitor-b.service
+```
+
+The instance name is the filename without `.toml`. Use short names made from
+letters, digits, underscores, and hyphens. Inspect and operate each process
+independently:
+
+```bash
+systemctl status monitor-dhcp@monitor-a.service --no-pager
+systemctl status monitor-dhcp@monitor-b.service --no-pager
+journalctl -u monitor-dhcp@monitor-a.service -n 50 --no-pager
+sudo systemctl reload monitor-dhcp@monitor-a.service
+sudo systemctl restart monitor-dhcp@monitor-b.service
+```
+
+Never configure two running services for the same interface. Both would
+receive the same DHCP traffic and could send competing replies. Each process
+binds UDP port 67 specifically to its configured interface, allowing separate
+instances to operate on separate interfaces.
+
+The packages also install this guide under
+`/usr/share/doc/monitor-dhcp/HOWTO-systemd.md` and a concise manual page. Run
+`man monitor-dhcp` to read the installed operating reference.
+
+## 7. Understand the unit policy
 
 The supplied unit intentionally uses directives available in systemd 245, the
 version shipped by Ubuntu 20.04. It therefore remains valid on newer target
@@ -262,7 +333,7 @@ seconds. This prevents an invalid configuration or unavailable interface from
 causing an unbounded rapid restart loop. Fix the cause and use
 `systemctl reset-failed` before starting again if the limit was reached.
 
-## 7. Verify and start the service
+## 8. Verify and start the service
 
 Ask systemd to parse the installed unit:
 
@@ -304,7 +375,7 @@ are deliberately unavailable because this is a network service. In particular,
 `PrivateNetwork=true` would isolate the daemon from the monitor interface and
 must not be added.
 
-## 8. Operate and reload it
+## 9. Operate and reload it
 
 Follow transactions:
 
@@ -353,7 +424,7 @@ Environment="RUST_LOG=debug"
 Then restart the service. Restore `RUST_LOG=info` afterward; transaction-level
 debug logging can be noisy.
 
-## 9. Troubleshoot startup failures
+## 10. Troubleshoot startup failures
 
 Always begin with the unit status and current-boot journal:
 
@@ -386,7 +457,7 @@ Do not work around permission errors by changing `User=root`, granting
 `CAP_NET_ADMIN`, disabling all hardening, or making the configuration
 world-writable. Those changes are unnecessary for the supported design.
 
-## 10. Upgrade or remove the service
+## 11. Upgrade or remove the service
 
 For an upgrade, install the new executable and unit, reload systemd, validate,
 and restart:
@@ -396,6 +467,8 @@ sudo install -o root -g root -m 0755 \
   target/release/monitor-dhcp /usr/bin/monitor-dhcp
 sudo install -o root -g root -m 0644 packaging/monitor-dhcp.service \
   /etc/systemd/system/monitor-dhcp.service
+sudo install -o root -g root -m 0644 packaging/monitor-dhcp@.service \
+  /etc/systemd/system/monitor-dhcp@.service
 sudo systemctl daemon-reload
 sudo -u monitor-dhcp /usr/bin/monitor-dhcp \
   --config /etc/monitor-dhcp/display-wall.toml --check

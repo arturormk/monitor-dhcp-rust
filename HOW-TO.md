@@ -75,8 +75,8 @@ The resulting executable is `target/release/monitor-dhcp`.
 
 ### Option B: build locally and copy the executable
 
-On the development machine, run the interactive build helper and select the
-target host's architecture:
+On the development machine, run the interactive build helper, select
+`Executable`, and then select the target host's architecture:
 
 ```bash
 ./quickstart.sh

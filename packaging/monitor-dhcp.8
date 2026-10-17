@@ -1,0 +1,137 @@
+.TH MONITOR-DHCP 8 "October 2026" "monitor-dhcp" "System Administration"
+.SH NAME
+monitor-dhcp \- deterministic DHCPv4 server for a dedicated Ethernet interface
+.SH SYNOPSIS
+.B monitor-dhcp
+.RB [ \-\-config " " PATH ]
+.RB [ \-\-check ]
+.br
+.B monitor-dhcp
+.RB [ \-h | \-\-help ]
+.br
+.B monitor-dhcp
+.RB [ \-V | \-\-version ]
+.SH DESCRIPTION
+.B monitor-dhcp
+serves configured addresses to known MAC addresses and one deterministic
+default address to unknown clients on a dedicated Ethernet interface.
+It has no address pool, lease database, DNS, routing, or management API.
+.PP
+The configured server address and subnet mask must already be assigned to the
+selected interface.  The interface must be isolated from production networks
+and must not have another DHCP server.
+.SH OPTIONS
+.TP
+.BI \-\-config " PATH"
+Read configuration from
+.IR PATH .
+The default is
+.IR /etc/monitor-dhcp/config.toml .
+.TP
+.B \-\-check
+Validate TOML syntax and static configuration semantics without inspecting the
+interface or opening UDP port 67.
+.TP
+.BR \-h , " " \-\-help
+Print command-line help.
+.TP
+.BR \-V , " " \-\-version
+Print the program version.
+.SH SYSTEMD SERVICES
+The package installs two unit files and does not enable either one
+automatically.
+.PP
+.B monitor-dhcp.service
+is the simple, single-interface service.  It reads
+.IR /etc/monitor-dhcp/config.toml .
+After editing and validating that file, enable the service with:
+.PP
+.RS
+.nf
+sudo -u monitor-dhcp monitor-dhcp --check
+sudo systemctl enable --now monitor-dhcp.service
+.fi
+.RE
+.PP
+.B monitor-dhcp@.service
+is the optional instance template for running one process per interface.  An
+instance named
+.I monitor-a
+reads
+.IR /etc/monitor-dhcp/monitor-a.toml .
+For example, after creating and validating
+.I monitor-a.toml
+and
+.IR monitor-b.toml ,
+start both instances with:
+.PP
+.RS
+.nf
+sudo systemctl enable --now monitor-dhcp@monitor-a.service
+sudo systemctl enable --now monitor-dhcp@monitor-b.service
+.fi
+.RE
+.PP
+Each configuration must select a different interface.  Do not run the standard
+service and an instance, or two instances, against the same interface.
+.SH RELOADS
+Use
+.B systemctl reload
+after changing reservations, the default address, subnet mask, or lease time.
+An invalid replacement is rejected and the previous in-memory configuration
+remains active.  Changes to
+.B interface
+or
+.B server_ip
+require a service restart.
+.SH FILES
+.TP
+.I /etc/monitor-dhcp/config.toml
+Configuration used by the standard service.
+.TP
+.I /etc/monitor-dhcp/<instance>.toml
+Configuration used by
+.IR monitor-dhcp@<instance>.service .
+.TP
+.I /lib/systemd/system/monitor-dhcp.service
+Packaged single-interface unit on Debian-family systems.
+.TP
+.I /lib/systemd/system/monitor-dhcp@.service
+Packaged instance template on Debian-family systems.
+.TP
+.I /usr/lib/systemd/system/monitor-dhcp.service
+Packaged single-interface unit on RPM-based systems.
+.TP
+.I /usr/lib/systemd/system/monitor-dhcp@.service
+Packaged instance template on RPM-based systems.
+.SH LOGGING
+Logs are written to the systemd journal.  Inspect an instance with, for
+example:
+.PP
+.RS
+.nf
+journalctl -u monitor-dhcp@monitor-a.service
+.fi
+.RE
+.PP
+Set
+.B RUST_LOG=debug
+in a systemd drop-in for transaction-level diagnostics.
+.SH SECURITY
+The packaged services run as the unprivileged
+.B monitor-dhcp
+user and receive only
+.B CAP_NET_BIND_SERVICE
+and
+.BR CAP_NET_RAW .
+Configuration files should be owned by
+.B root:monitor-dhcp
+with mode 0640.
+.SH SEE ALSO
+.BR systemctl (1),
+.BR journalctl (1),
+.BR systemd.unit (5),
+.BR systemd.service (5)
+.PP
+The complete packaged guide is
+.IR /usr/share/doc/monitor-dhcp/HOWTO-systemd.md .
