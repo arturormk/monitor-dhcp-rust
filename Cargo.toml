@@ -16,7 +16,7 @@ env_logger = "0.11.11"
 libc = "0.2.189"
 log = "0.4.34"
 serde = { version = "1.0.229", features = ["derive"] }
-signal-hook = "0.3.18"
+signal-hook = "0.4.5"
 socket2 = { version = "0.5.10", features = ["all"] }
 toml = "1.1.6"
 
