@@ -104,7 +104,7 @@ file /path/printed/by/quickstart/monitor-dhcp
 On the remote host, install the executable selected in the previous step:
 
 ```bash
-sudo install -Dm0755 /path/to/monitor-dhcp /usr/local/bin/monitor-dhcp
+sudo install -Dm0755 /path/to/monitor-dhcp /usr/bin/monitor-dhcp
 sudo install -d -m0755 /etc/monitor-dhcp
 sudo install -m0644 /path/to/config.example.toml /etc/monitor-dhcp/config.toml
 ```
@@ -156,7 +156,7 @@ be active safely.
 Validate the file before changing the network or starting the service:
 
 ```bash
-/usr/local/bin/monitor-dhcp --config /etc/monitor-dhcp/config.toml --check
+/usr/bin/monitor-dhcp --config /etc/monitor-dhcp/config.toml --check
 ```
 
 The success message notes that this static check does not inspect the network
@@ -293,7 +293,7 @@ ping -c 3 192.168.50.10
 After editing the configuration, validate it and reload the service:
 
 ```bash
-sudo /usr/local/bin/monitor-dhcp \
+sudo /usr/bin/monitor-dhcp \
   --config /etc/monitor-dhcp/config.toml --check
 sudo systemctl reload monitor-dhcp.service
 journalctl -u monitor-dhcp.service -n 20 --no-pager
@@ -315,9 +315,9 @@ To upgrade the executable, build and copy the new file, then install it and
 restart:
 
 ```bash
-sudo install -m0755 /path/to/new/monitor-dhcp /usr/local/bin/monitor-dhcp
+sudo install -m0755 /path/to/new/monitor-dhcp /usr/bin/monitor-dhcp
 sudo systemctl restart monitor-dhcp.service
-/usr/local/bin/monitor-dhcp --version
+/usr/bin/monitor-dhcp --version
 ```
 
 ## Troubleshooting

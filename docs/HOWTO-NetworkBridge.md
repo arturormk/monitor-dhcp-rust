@@ -183,7 +183,7 @@ Change `/etc/monitor-dhcp/config.toml` to use `interface = "br-monitor"`, add
 the two reservations, validate it, and restart the service:
 
 ```bash
-sudo /usr/local/bin/monitor-dhcp \
+sudo /usr/bin/monitor-dhcp \
   --config /etc/monitor-dhcp/config.toml --check
 sudo systemctl restart monitor-dhcp.service
 journalctl -u monitor-dhcp.service -n 30 --no-pager

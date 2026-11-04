@@ -7,14 +7,16 @@ The configuration file is the source of truth. This design fits a PC directly co
 ## Download a release
 
 GitHub [releases](https://github.com/arturormk/monitor-dhcp-rust/releases)
-contain a statically linked Linux x86_64 archive. Stable `v1.<even>` releases
-also contain installable Debian and RPM packages with checksums. On Ubuntu
-20.04 or newer, install the `.deb`, edit its deliberately commented-out
-configuration, and then start the service:
+contain a statically linked Linux x86_64 archive with a SHA-256 checksum.
+Stable `v1.<even>` releases after v1.0 (v1.2, v1.4, …) also contain installable
+Debian and RPM packages with checksums; v1.0 predates the packaging and
+contains only the archive. On Ubuntu 20.04 or newer, install the `.deb`, edit
+its deliberately commented-out configuration, and then start the service. For
+example, with v1.2:
 
 ```bash
-sha256sum --check monitor-dhcp_1.0_amd64.deb.sha256
-sudo apt install ./monitor-dhcp_1.0_amd64.deb
+sha256sum --check monitor-dhcp_1.2_amd64.deb.sha256
+sudo apt install ./monitor-dhcp_1.2_amd64.deb
 sudoedit /etc/monitor-dhcp/config.toml
 sudo -u monitor-dhcp monitor-dhcp --check
 sudo systemctl enable --now monitor-dhcp.service
